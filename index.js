@@ -1,36 +1,55 @@
-// Importando e criando uma instancia express
-const express = require("express");
+// Importando o Express com ES6 Modules
+import express from "express";
+
+// Iniciando o Express na variável app
 const app = express();
 
-app.set("view engine", "ejs");
-app.use(express.static("public"));
+// Importando o Sequelize(com os dados da conexão)
+import connection from "./config/sequelize-config.js";
 
-// Definindo Servidor
-const port = 8080;
-app.listen(port, (error) => {
-    if(error){
-        console.log(`Ocorreu um erro: ${error}`);
-    } else {
-        console.log(`servidor iniciado com sucesso em http://localhost:${port}`);
-    }
+// Importando os Controllers (onde estão as rotas)
+import ClientesController from "./controllers/ClientesController.js";
+import ProdutosController from "./controllers/ProdutosController.js";
+import PedidosController from "./controllers/PedidosController.js";
+
+// Permite capturar dados vindo de formulários
+app.use(express.urlencoded({extended: false}));
+
+// Realizando a conexão com o banco de dados
+connection.authenticate().then(() => {
+    console.log("Conexão com o banco de dados feita com sucesso!");
+}).catch((error) => {
+    console.log(error);
 });
 
-// Criando Rotas
-app.get("/", (req, res) => {
+// Criando o banco de dados se ele não existir
+connection.query("CREATE DATABASE IF NOT EXISTS loja;").then(() => {
+    console.log("O banco de dados está criado.");
+}).catch((error) => {
+    console.log(error);
+});
+
+// Define o EJS como Renderizador de páginas
+app.set("view engine", "ejs");
+
+// Define o uso da pasta "public" para uso de arquivos estáticos
+app.use(express.static("public"));
+
+// Definindo o uso das rotas dos Controllers
+app.use("/", ClientesController);
+app.use("/", ProdutosController);
+app.use("/", PedidosController);
+
+// ROTA PRINCIPAL
+app.get("/", function (req, res) {
     res.render("index");
 });
 
-app.get("/clientes", (req,res) => {
-    const listaClientes = [{nome: "Rodrigo Moraes de Souza", cpf: "123.456.789-01", endereco: "R dos Bobos, 0, Bairro de Ninguem"}, {nome: "Jaqueline Pedroso de Freitas", cpf: "456.789.012-34", endereco: "R Quarenta e Três, 154, Jd Lopez"}, {nome: "Lucas Pereira", cpf: "789.123.456-78", endereco: "R Joaquim Lopez, 12, Jd das Palmeiras"}, {nome: "Gabriel Cardoso Lima", cpf: "192.837.465-01", endereco: "R Venâncio das Flores, 87, Vila São Pedro"}];
-    res.render("clientes", {listaClientes: listaClientes});
-});
-
-app.get("/produtos", (req,res) => {
-    const listaProdutos = [{nomeProduto: "Refrigerante", preco: "6.00", categoria: "Bebida"}, {nomeProduto: "Salgadinho", preco: "3.00", categoria: "Comida"},{nomeProduto: "Arroz", preco: "36.00", categoria: "Comida"},{nomeProduto: "Detergente", preco: "2.00", categoria: "Limpeza"}];
-    res.render("produtos", {listaProdutos: listaProdutos});
-});
-
-app.get("/pedidos", (req,res) => {
-    const listaPedidos = [{numeroPedido: "1", valor: "20.00"}, {numeroPedido: "2", valor: "60.00"}, {numeroPedido: "3", valor: "72.00"}, {numeroPedido: "4", valor: "10.00"}];
-    res.render("pedidos", {listaPedidos: listaPedidos});
+// INICIA O SERVIDOR NA PORTA 8080
+app.listen(8080, function (error) {
+    if (error) {
+        console.log("Ocorreu um erro!");
+    } else {
+        console.log(`Servidor Iniciado com sucesso!`);
+    }
 });
